@@ -3,6 +3,6 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "test": "node --test run.test.mjs"
+    "test": "node --test run.test.mjs cloudflare/core.test.mjs"
   }
 }
