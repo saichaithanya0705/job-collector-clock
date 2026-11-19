@@ -53,7 +53,7 @@ export async function runSweep({ origin, token, event = 'manual', transport = fe
 }
 if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
   try {
-    const summary = await runSweep({ origin: process.env.COLLECTOR_URL, token: process.env.COLLECTOR_SERVICE_TOKEN, event: process.env.GITHUB_EVENT_NAME,
+    const summary = await runSweep({ origin: process.env.COLLECTOR_URL, token: process.env.COLLECTOR_SERVICE_TOKEN, event: process.env.COLLECTOR_TRIGGER || process.env.GITHUB_EVENT_NAME,
       onProgress: ({processed, expected}) => { if (processed % 50 === 0 || processed === expected) console.log(JSON.stringify({processed, expected})); } });
     console.log(JSON.stringify(summary));
     if (summary.status === 'partial') console.log('::warning::Some employer feeds failed or were unfinished. Review the private collector dashboard.');

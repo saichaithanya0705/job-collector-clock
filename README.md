@@ -25,3 +25,7 @@ It separates public timing code from private data and keeps completion evidence 
 
 ## Other valid patterns
 A hosted cron service or dedicated worker can offer stronger scheduling guarantees at a hosting cost.
+
+## Prepared Render alternative
+
+render.yaml can run the same coordinator using a Render cron service. It is not activated by this repository alone. The smallest cron plan is paid ($0.00016 per active minute with a $1 monthly minimum, checked 19 November 2026). At 25–50 minutes per hourly run, estimated 30-day compute is $2.88–$5.76 before any additional charges. A paid service must be explicitly approved before creation. Credentials are configured as private runtime secrets, never in this file. Set COLLECTOR_TRIGGER=schedule for unattended run history.

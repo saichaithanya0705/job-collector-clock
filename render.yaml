@@ -1,0 +1,22 @@
+# Prepared alternative; no Render resource is created by this file alone.
+services:
+  - type: cron
+    name: job-collector-clock
+    runtime: node
+    plan: starter
+    region: singapore
+    repo: https://github.com/saichaithanya0705/job-collector-clock
+    branch: main
+    schedule: "42 * * * *"
+    buildCommand: npm test
+    startCommand: node run.mjs
+    autoDeploy: false
+    envVars:
+      - key: NODE_VERSION
+        value: 24.14.0
+      - key: COLLECTOR_TRIGGER
+        value: schedule
+      - key: COLLECTOR_URL
+        sync: false
+      - key: COLLECTOR_SERVICE_TOKEN
+        sync: false
