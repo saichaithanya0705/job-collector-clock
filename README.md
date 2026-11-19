@@ -4,7 +4,7 @@ This public repository contains only a generic hourly coordinator and tests. Pri
 
 GitHub Secrets: `COLLECTOR_URL` is the private collector origin; `COLLECTOR_SERVICE_TOKEN` is its service credential. The workflow runs hourly at minute 42 UTC and supports manual dispatch. Standard public-repository runners are used. GitHub schedules can be delayed; the private dashboard is the source of truth for completed coverage.
 
-Each run has a 50-minute collection budget and reports successful, failed and unfinished feeds. Overlapping runs are serialized. Partial retrieval keeps existing openings and only completed source snapshots close missing jobs. Public logs show aggregate counts only.
+Four employer pairs run in parallel, with at most eight feeds in flight. Each run has a 50-minute collection budget including retries and a separate bounded finalization budget and reports successful, failed and unfinished feeds. Overlapping runs are serialized. Partial retrieval keeps existing openings and only completed source snapshots close missing jobs. Public logs show aggregate counts only.
 
 Run `npm test` to verify credential confinement, redirects and finalization.
 
