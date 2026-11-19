@@ -1,11 +1,14 @@
 import { DurableObject } from 'cloudflare:workers';
-import { advanceClock } from './core.mjs';
+import { advanceClock, collectLane } from './core.mjs';
 
 export class CollectorClock extends DurableObject {
   constructor(ctx, env) {
     super(ctx, env);
     this.busy = false;
     ctx.storage.sql.exec('CREATE TABLE IF NOT EXISTS clock_state(id INTEGER PRIMARY KEY, body TEXT NOT NULL)');
+  }
+  async collect(runId, ids, deadline) {
+    return collectLane(runId, ids, deadline, this.env);
   }
   async tick() {
     if (this.busy) return { status: 'busy' };
@@ -14,7 +17,12 @@ export class CollectorClock extends DurableObject {
       const row = this.ctx.storage.sql.exec('SELECT body FROM clock_state WHERE id=1').toArray()[0];
       return await advanceClock(row ? JSON.parse(row.body) : null, state => {
         this.ctx.storage.sql.exec('INSERT INTO clock_state(id,body) VALUES(1,?) ON CONFLICT(id) DO UPDATE SET body=excluded.body', JSON.stringify(state));
-      }, this.env);
+      }, this.env, {
+        dispatch: (index, runId, ids, deadline) => {
+          const lane = this.env.CLOCK.get(this.env.CLOCK.idFromName('collector-lane-' + index));
+          return lane.collect(runId, ids, deadline);
+        },
+      });
     } finally { this.busy = false; }
   }
 }
