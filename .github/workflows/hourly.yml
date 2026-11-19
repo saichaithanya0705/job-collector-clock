@@ -1,0 +1,23 @@
+name: Hourly employer collection
+on:
+  schedule:
+    - cron: '42 * * * *'
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: hourly-employer-collection
+  cancel-in-progress: false
+jobs:
+  collect:
+    runs-on: ubuntu-latest
+    timeout-minutes: 56
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Trigger private collector and report coverage
+        env:
+          COLLECTOR_URL: ${{ secrets.COLLECTOR_URL }}
+          COLLECTOR_SERVICE_TOKEN: ${{ secrets.COLLECTOR_SERVICE_TOKEN }}
+        run: node run.mjs
