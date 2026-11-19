@@ -1,7 +1,8 @@
 import { randomUUID } from 'node:crypto';
 import { pathToFileURL } from 'node:url';
 const pause = ms => new Promise(resolve => setTimeout(resolve, ms));
-export async function runSweep({ origin, token, event = 'manual', transport = fetch, sleep = pause, onProgress = () => {} }) {
+export async function runSweep({ origin, token, event = 'manual', transport = fetch, sleep = pause, onProgress = () => {}, concurrency = 4 }) {
+  if (!Number.isInteger(concurrency) || concurrency < 1 || concurrency > 4) throw Error('Collection concurrency must be between one and four employer pairs.');
   const base = new URL(origin);
   if (base.protocol !== 'https:' || base.username || base.password || base.pathname !== '/' || base.search || base.hash || !token) throw Error('Configure the collector origin and its private service token.');
   async function call(payload, timeout = 140000) {
@@ -28,10 +29,18 @@ export async function runSweep({ origin, token, event = 'manual', transport = fe
       || run.sourceIds.some(id => typeof id !== 'string' || !/^[a-z0-9_-]{1,100}$/.test(id))
       || new Set(run.sourceIds).size !== run.sourceIds.length) throw Error('Invalid collector assignment.');
     const deadline = Math.min(Date.now() + 50 * 60000, Number.isFinite(run.deadline) ? run.deadline - 2 * 60000 : Infinity);
-    for (let i = 0; i < run.sourceIds.length && Date.now() < deadline; i += 2) {
-      await call({ action: 'collect', runId, sourceIds: run.sourceIds.slice(i, i + 2) });
-      onProgress({ processed: Math.min(i + 2, run.sourceIds.length), expected: run.sourceIds.length });
-    }
+    let cursor = 0, processed = 0, collectionFailure;
+    await Promise.all(Array.from({ length: concurrency }, async () => {
+      while (!collectionFailure && cursor < run.sourceIds.length && Date.now() < deadline) {
+        const ids = run.sourceIds.slice(cursor, cursor += 2);
+        try {
+          await call({ action: 'collect', runId, sourceIds: ids });
+          processed += ids.length;
+          onProgress({ processed, expected: run.sourceIds.length });
+        } catch (error) { collectionFailure = error; }
+      }
+    }));
+    if (collectionFailure) throw collectionFailure;
   } catch (error) { failure = error; }
   finally { summary = await call({ action: 'finish', runId }, 90000); }
   if (failure) throw failure;
